@@ -35,6 +35,7 @@
 
 #include <oculus_driver/AsyncService.h>
 #include <oculus_driver/SonarDriver.h>
+#include <oculus_driver/Oculus.h>
 
 #include <future>
 #include <iostream>
@@ -52,6 +53,8 @@
 #include <rclcpp/rclcpp.hpp>
 #include <sensor_msgs/msg/fluid_pressure.hpp>
 #include <sensor_msgs/msg/temperature.hpp>
+#include "oculus_driver/OculusMessage.h"
+#include <spdlog/spdlog.h>
 
 struct SonarParameters {
   int frequency_mode;
@@ -109,10 +112,10 @@ const IntParam FREQUENCY_MODE = {"frequency_mode", 1, 2, 2,
     "\t2: High frequency (2.1Mhz, narrow aperture)."};
 
 const IntParam PING_RATE = {"ping_rate", 0, 5, 2,
-    "Frequency of ping fires.\n\t" + std::to_string(pingRateNormal) + ": 10Hz max ping rate.\n\t" + std::to_string(pingRateHigh) +
-        ": 15Hz max ping rate.\n\t" + std::to_string(pingRateHighest) + ": 40Hz max ping rate.\n\t" +
-        std::to_string(pingRateLow) + ": 5Hz max ping rate.\n\t" + std::to_string(pingRateLowest) + ": 2Hz max ping rate.\n\t" +
-        std::to_string(pingRateStandby) + ": Standby mode (no ping fire)"};
+    "Frequency of ping fires.\n\t" + std::to_string(oculus::PingRateType::PingRateNormal) + ": 10Hz max ping rate.\n\t" + std::to_string(oculus::PingRateType::PingRateHigh) +
+        ": 15Hz max ping rate.\n\t" + std::to_string(oculus::PingRateType::PingRateHighest) + ": 40Hz max ping rate.\n\t" +
+        std::to_string(oculus::PingRateType::PingRateLow) + ": 5Hz max ping rate.\n\t" + std::to_string(oculus::PingRateType::PingRateLowest) + ": 2Hz max ping rate.\n\t" +
+        std::to_string(oculus::PingRateType::PingRateStandby) + ": Standby mode (no ping fire)"};
 const IntParam NBEAMS = {"nbeams", 0, 1, 1,
     "Number of ping beams.\n"
     "\t0: Oculus outputs 256 beams.\n"
@@ -164,6 +167,7 @@ protected:
   int get_subscription_count() const;
 
 private:
+  std::shared_ptr<spdlog::logger> logger_;
   std::shared_ptr<oculus::SonarDriver> sonar_driver_;
   oculus::AsyncService io_service_;
   // rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;
@@ -197,7 +201,7 @@ private:
   void checkOverheating(const double& new_temperature);
   void setMinimalFlags(uint8_t& flags) const;
   void checkMinimalFlags(const uint8_t& flags) const;
-  void publishStatus(const OculusStatusMsg& status);
+  void publishStatus(const std::shared_ptr<const oculus::StatusMessage>& status);
   void publishPing(const oculus::PingMessage::ConstPtr& pingMetadata);
   void handleDummy();
 };

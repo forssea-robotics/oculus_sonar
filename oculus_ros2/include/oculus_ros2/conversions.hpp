@@ -62,31 +62,31 @@ inline void toMsg(oculus_interfaces::msg::OculusHeader& msg, const OculusMessage
   msg.msg_id = header.msgId;
   msg.msg_version = header.msgVersion;
   msg.payload_size = header.payloadSize;
-  msg.spare2 = header.spare2;
+  msg.part_number = header.partNumber;
 }
 
 inline void toMsg(oculus_interfaces::msg::OculusVersionInfo& msg, const OculusVersionInfo& version) {
-  msg.firmware_version0 = version.firmwareVersion0;
-  msg.firmware_date0 = version.firmwareDate0;
-  msg.firmware_version1 = version.firmwareVersion1;
-  msg.firmware_date1 = version.firmwareDate1;
-  msg.firmware_version2 = version.firmwareVersion2;
-  msg.firmware_date2 = version.firmwareDate2;
+  msg.firmware_version0 = version.arm0Version0;
+  msg.firmware_date0 = version.arm0Date0;
+  msg.firmware_version1 = version.arm1Version1;
+  msg.firmware_date1 = version.arm1Date1;
+  msg.firmware_version2 = version.coreVersion2;
+  msg.firmware_date2 = version.coreDate2;
 }
 
 inline void toMsg(oculus_interfaces::msg::OculusStatus& msg, const OculusStatusMsg& status) {
-  toMsg(msg.hdr, status.hdr);
+  toMsg(msg.hdr, status.head);
 
   msg.device_id = status.deviceId;
   msg.device_type = status.deviceType;
   msg.part_number = status.partNumber;
   msg.status = status.status;
 
-  toMsg(msg.version_info, status.versinInfo);
+  toMsg(msg.version_info, status.versionInfo);
 
   msg.ip_addr = status.ipAddr;
   msg.ip_mask = status.ipMask;
-  msg.connected_ip_addr = status.connectedIpAddr;
+  msg.connected_ip_addr = status.clientAddr;
 
   msg.mac_addr0 = status.macAddr0;
   msg.mac_addr1 = status.macAddr1;
@@ -115,7 +115,7 @@ inline void toMsg(oculus_interfaces::msg::OculusFireConfig& msg, const OculusSim
   msg.gamma_correction = fireConfig.gammaCorrection;
   msg.flags = fireConfig.flags;
   msg.range = fireConfig.range;
-  msg.gain_percent = fireConfig.gainPercent;
+  msg.gain_percent = fireConfig.gain;
   msg.speed_of_sound = fireConfig.speedOfSound;
   msg.salinity = fireConfig.salinity;
 }
