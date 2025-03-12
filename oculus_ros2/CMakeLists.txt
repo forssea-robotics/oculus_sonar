@@ -61,7 +61,28 @@ ament_target_dependencies(oculus_viewer_node PUBLIC
     cv_bridge
 )
 
+add_executable(oculus_republisher_node
+    src/oculus_republisher_node.cpp
+    src/sonar_viewer.cpp
+)
+target_include_directories(oculus_republisher_node PUBLIC
+    $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
+    $<INSTALL_INTERFACE:include>
+    ${oculus_driver_INCLUDE_DIR}
+)
+target_link_libraries(oculus_republisher_node PUBLIC
+    oculus_driver
+)
+ament_target_dependencies(oculus_republisher_node PUBLIC
+    rclcpp
+    oculus_interfaces
+    rcl_interfaces
+    sensor_msgs
+    OpenCV
+    cv_bridge
+)
+
 install(DIRECTORY launch cfg DESTINATION share/${PROJECT_NAME})
-install(TARGETS oculus_sonar_node oculus_viewer_node DESTINATION lib/${PROJECT_NAME})
+install(TARGETS oculus_sonar_node oculus_viewer_node oculus_republisher_node DESTINATION lib/${PROJECT_NAME})
 
 ament_package()
