@@ -174,29 +174,29 @@ void OculusSonarNode::checkMinimalFlags(const uint8_t& flags) const {
 }
 
 void OculusSonarNode::publishStatus(const std::shared_ptr<const oculus::StatusMessage>& status) {
-  if (status->status.partNumber != oculus::OculusPartNumberType::M1200d) {
+  if (status->partNumber() != oculus::OculusPartNumberType::M1200d) {
     RCLCPP_ERROR_STREAM(get_logger(),
         "The sonar version seems to be different than M1200d."
         " This driver is not suppose to work with your sonar.");
   }
 
   static oculus_interfaces::msg::OculusStatus msg;
-  oculus::toMsg(msg, status->status);
+  oculus::toMsg(msg, status->status());
   this->status_publisher_->publish(msg);
 
   if (!is_running_) {
-    checkOverheating(status->status.temperature6);
+    checkOverheating(status->status().temperature6);
     sensor_msgs::msg::Temperature temperature_ros_msg;
     temperature_ros_msg.header.frame_id = frame_id_;
     temperature_ros_msg.header.stamp = this->now();
-    temperature_ros_msg.temperature = status->status.temperature6;  // Measurement of the Temperature in Degrees Celsius
+    temperature_ros_msg.temperature = status->status().temperature6;  // Measurement of the Temperature in Degrees Celsius
     temperature_ros_msg.variance = 0;  // 0 is interpreted as variance unknown
     this->temperature_publisher_->publish(temperature_ros_msg);
 
     sensor_msgs::msg::FluidPressure pressure_ros_msg;
     pressure_ros_msg.header.frame_id = frame_id_;
     pressure_ros_msg.header.stamp = this->now();
-    pressure_ros_msg.fluid_pressure = status->status.pressure;  // Pressure reading in Pascals.
+    pressure_ros_msg.fluid_pressure = status->pressure();  // Pressure reading in Pascals.
     pressure_ros_msg.variance = 0;  // 0 is interpreted as variance unknown
     this->pressure_publisher_->publish(pressure_ros_msg);
   }
