@@ -26,8 +26,9 @@ add_executable(oculus_sonar_node
 target_include_directories(oculus_sonar_node PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${oculus_driver_INCLUDE_DIR}
 )
-target_link_libraries(oculus_sonar_node PRIVATE
+target_link_libraries(oculus_sonar_node PUBLIC
     oculus_driver
 )
 ament_target_dependencies(oculus_sonar_node PUBLIC
@@ -46,8 +47,9 @@ add_executable(oculus_viewer_node
 target_include_directories(oculus_viewer_node PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
+    ${oculus_driver_INCLUDE_DIR}
 )
-target_link_libraries(oculus_viewer_node PRIVATE
+target_link_libraries(oculus_viewer_node PUBLIC
     oculus_driver
 )
 ament_target_dependencies(oculus_viewer_node PUBLIC
