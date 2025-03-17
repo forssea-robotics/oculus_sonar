@@ -65,6 +65,7 @@ public:
       const int& offset,
       const std::vector<uint8_t>& ping_data,
       const int& master_mode,
+      const int& step,
       const std_msgs::msg::Header& header) const;
 
   rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_publisher_;

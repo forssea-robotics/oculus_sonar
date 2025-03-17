@@ -43,7 +43,7 @@ void SonarViewer::publishFan(const oculus_interfaces::msg::Ping& ros_ping_msg) c
   const int offset = -16;  // quick fix TODO(anyone, offset is a empirical value depending of the data played)
 
   publishFan(
-      ros_ping_msg.n_beams, ros_ping_msg.n_ranges, offset, ros_ping_msg.ping_data, ros_ping_msg.master_mode, ros_ping_msg.header);
+      ros_ping_msg.n_beams, ros_ping_msg.n_ranges, offset, ros_ping_msg.ping_data, ros_ping_msg.master_mode, ros_ping_msg.step, ros_ping_msg.header);
 }
 
 void SonarViewer::publishFan(const oculus::PingMessage::ConstPtr& ping, const std::string& frame_id) const {
@@ -51,10 +51,7 @@ void SonarViewer::publishFan(const oculus::PingMessage::ConstPtr& ping, const st
   header.stamp = oculus::toMsg(ping->timestamp());
   header.frame_id = frame_id;
 
-  if (!ping->has_gains()) {
-    RCLCPP_WARN(node_->get_logger(), "Gains are not send by the sonar. The conic image view is wrong.");
-  }
-  publishFan(ping->bearing_count(), ping->range_count(), ping->ping_data_offset(), ping->data(), ping->master_mode(), header);
+  publishFan(ping->bearing_count(), ping->range_count(), ping->ping_data_offset(), ping->data(), ping->master_mode(), ping->step(), header);
 }
 
 void SonarViewer::publishFan(const int& width,
@@ -62,9 +59,9 @@ void SonarViewer::publishFan(const int& width,
     const int& offset,
     const std::vector<uint8_t>& ping_data,
     const int& master_mode,
+    const int& step,
     const std_msgs::msg::Header& header) const {
-  const int step = width + SIZE_OF_GAIN_;
-  const float theta_shift = 270;
+  int size_of_gain = step - width;
   const int mat_encoding = CV_8U;
   const char* ros_image_encoding = sensor_msgs::image_encodings::MONO8;
 
@@ -101,6 +98,7 @@ void SonarViewer::publishFan(const int& width,
   cv::convertMaps(map, cv::Mat(), source_map_1, source_map_2, CV_16SC2);
 
   cv::Mat sonar_mat_data(height, step, mat_encoding);  // Note that the width is 'step' to include gain data
+
   // Copy the data including gain data
   for (int i = 0; i < height; ++i)
     std::copy(ping_data.begin() + offset + i * step, ping_data.begin() + offset + (i + 1) * step, sonar_mat_data.ptr<uint8_t>(i));
@@ -109,14 +107,14 @@ void SonarViewer::publishFan(const int& width,
     float raw_gain_min = std::numeric_limits<float>::max();
     float raw_gain_max = std::numeric_limits<float>::min();
     for (int i = 0; i < height; i++) {
-      raw_gain_min = std::min(raw_gain_min, static_cast<float>(sonar_mat_data.at<uint32_t>(i, 0)));
-      raw_gain_max = std::max(raw_gain_max, static_cast<float>(sonar_mat_data.at<uint32_t>(i, 0)));
+      raw_gain_min = std::min(raw_gain_min, static_cast<float>(sonar_mat_data.at<uint8_t>(i, 0)));
+      raw_gain_max = std::max(raw_gain_max, static_cast<float>(sonar_mat_data.at<uint8_t>(i, 0)));
     }
-    const float gain_nomalization = std::sqrt(raw_gain_max) / std::numeric_limits<uint8_t>::max();
+    const float gain_normalization = std::sqrt(raw_gain_max) / std::numeric_limits<uint8_t>::max();
     for (int i = 0; i < height; i++) {
-      const float gain_i = gain_nomalization / std::sqrt(sonar_mat_data.at<uint32_t>(i, 0));
-      for (int j = SIZE_OF_GAIN_; j < step; j++) {
-        const float new_pixel_val = sonar_mat_data.at<uint8_t>(i, j) * gain_i;
+      float gain_i = gain_normalization * (sonar_mat_data.at<uint8_t>(i, 0) - raw_gain_min);
+      for (int j = size_of_gain; j < step; j++) {
+        float new_pixel_val = sonar_mat_data.at<uint8_t>(i, j) * gain_i;
         sonar_mat_data.at<uint8_t>(i, j) = std::clamp(new_pixel_val, 0.0f, 255.0f);
       }
     }
@@ -125,7 +123,7 @@ void SonarViewer::publishFan(const int& width,
   // Now remove the gain data from sonar_mat_data
   cv::Mat sonar_mat_data_without_gain(height, width, mat_encoding);
   for (int i = 0; i < height; ++i)
-    std::copy(sonar_mat_data.ptr<uint8_t>(i) + SIZE_OF_GAIN_, sonar_mat_data.ptr<uint8_t>(i) + step,
+    std::copy(sonar_mat_data.ptr<uint8_t>(i) + size_of_gain, sonar_mat_data.ptr<uint8_t>(i) + step,
         sonar_mat_data_without_gain.ptr<uint8_t>(i));
 
   cv::Mat out = cv::Mat::ones(cv::Size(image_width, height), CV_MAKETYPE(mat_encoding, 1)) * std::numeric_limits<uint8_t>::max();
